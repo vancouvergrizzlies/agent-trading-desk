@@ -6,8 +6,10 @@ call site; these compute the prices and decisions that placement should use.
 """
 from __future__ import annotations
 
+import os
 import uuid
 from dataclasses import dataclass
+from typing import Optional
 
 
 def gen_ref_id() -> str:
@@ -68,3 +70,28 @@ def classify_fill(quantity: float, cumulative_quantity: float, state: str) -> Fi
     if cumulative_quantity > 0:
         return FillStatus("partial", cumulative_quantity, remaining)
     return FillStatus("open", 0.0, remaining)
+
+
+class FiredKeyRegistry:
+    """Persisted set of idempotency keys that have already fired an order, so the
+    same signal cannot double-fire across cycles or sessions (#18). The duplicate
+    guard the preflight check relies on.
+    """
+
+    def __init__(self, path: Optional[str] = None):
+        self._path = path
+        self._keys = set()
+        if path and os.path.exists(path):
+            with open(path) as f:
+                self._keys = {line.strip() for line in f if line.strip()}
+
+    def has_fired(self, key: str) -> bool:
+        return key in self._keys
+
+    def mark(self, key: str) -> None:
+        if key in self._keys:
+            return
+        self._keys.add(key)
+        if self._path:
+            with open(self._path, "a") as f:
+                f.write(key + "\n")

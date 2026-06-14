@@ -7,8 +7,8 @@ An autonomous, options-focused trading desk run by [Claude Code](https://claude.
 ## What's here
 | Path | Role |
 |---|---|
-| `tradingdesk/` | **deterministic, unit-tested quant core** (stdlib-only, 10 modules): Black-Scholes + greeks, vol & IV/HV gate, expected-move/payoff/asymmetry math, liquidity gate, sizing, the code-enforced **risk gate** (`gate_check()` + kill switch), **execution** (slippage guard/idempotency), **reconciliation** (protection-gap/drift), a **track-record engine**, and a **SEC Form-4 insider-cluster detector** |
-| `tests/` | 64 tests (known-value + a real EDGAR fixture). `python -m pytest -q` |
+| `tradingdesk/` | **deterministic, unit-tested quant core** (stdlib-only, 11 modules): Black-Scholes + greeks, vol & IV/HV gate, expected-move/payoff/asymmetry math, liquidity gate, sizing, the code-enforced **risk gate** (`gate_check()` + kill switch), **execution** (slippage guard/idempotency), **reconciliation** (protection-gap/drift), a **track-record engine**, and a **SEC Form-4 insider-cluster detector** |
+| `tests/` | 80 tests (known-value + a real EDGAR fixture). `python -m pytest -q` |
 | `.github/workflows/ci.yml` | CI: lint (ruff) + tests on Python 3.9/3.11/3.12 |
 | `.claude/commands/desk.md` | `/desk` — daily management (status / wrap / score / hunt), micro+macro sweep, playbook gates |
 | `.claude/commands/intel.md` | `/intel` — primary-source catalyst hunt (EDGAR, FDA, Federal Register, transcripts) |

@@ -31,6 +31,7 @@ This is an **LLM-orchestrated trading desk with a deterministic, tested quantita
 ```
  data/edgar (signals)  →  options_math + volatility + liquidity (is the setup good?)
         →  sizing (how big)  →  risk.gate_check() ← THE SINGLE DOOR every order passes
+        →  preflight (assert data fresh/sane, reconciled, not duplicate, risk OK) ← HALTS on any failure
         →  execution (limit price, slippage guard, idempotent fill)
         →  [Robinhood MCP places it]
         →  recon (did reality match intent? protection gaps?)
@@ -51,6 +52,7 @@ the limits. That single chokepoint is what keeps this coherent instead of sprawl
 | `risk.py` | **the gate** — `gate_check()` single door + kill switch + earnings blackout; deliberately aggressive limits, enforces ruin-prevention only |
 | `execution.py` | limit pricing with slippage guard, idempotency keys, fill classification — never cross a wide spread, never double-fire |
 | `recon.py` | protection-gap + position-drift detection (the ORCL-stub / SOUN-missed-stop lessons, in code) |
+| `preflight.py` | **runtime self-check** — deterministic assertions run every cycle before any order (data freshness/sanity, reconciliation, duplicate guard, kill switch, earnings blackout, order sanity); HALTS on failure. NOT an LLM introspecting — `assert`, not "is this good?". An adversarial test suite proves each broken condition halts trading. |
 | `performance.py` | track-record engine: win rate, profit factor, expectancy, drawdown, Sharpe, alpha, per-lane |
 | `edgar.py` | **SEC Form-4 cluster-buy detector** — official daily index + structured XML (replaces flaky scraping); UA + 10 req/s compliant |
 
