@@ -8,8 +8,8 @@ feed at the call site and are passed in explicitly.
 """
 
 from . import (blackscholes, volatility, options_math, liquidity, sizing,
-               risk, performance, edgar)
+               risk, execution, recon, performance, edgar)
 
 __all__ = ["blackscholes", "volatility", "options_math", "liquidity", "sizing",
-           "risk", "performance", "edgar"]
+           "risk", "execution", "recon", "performance", "edgar"]
 __version__ = "0.1.0"
