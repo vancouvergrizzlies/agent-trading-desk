@@ -1,0 +1,7 @@
+# Private state — never share
+journal-history/
+.claude/scheduled_tasks.lock
+.claude/scheduled_tasks.json
+.claude/settings.local.json
+Trading-Journal.md
+Trading-Journal-Archive.md

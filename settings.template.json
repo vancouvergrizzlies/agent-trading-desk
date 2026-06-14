@@ -1,0 +1,38 @@
+{
+  "_comment": "Copy to .claude/settings.local.json (gitignored). Replace <HOME> and add your own allowlist. The SessionStart hook snapshots your private journal before each session.",
+  "permissions": {
+    "allow": [
+      "mcp__robinhood-trading__get_accounts",
+      "mcp__robinhood-trading__get_portfolio",
+      "mcp__robinhood-trading__get_equity_positions",
+      "mcp__robinhood-trading__get_equity_quotes",
+      "mcp__robinhood-trading__get_equity_orders",
+      "mcp__robinhood-trading__review_equity_order",
+      "mcp__robinhood-trading__place_equity_order",
+      "mcp__robinhood-trading__cancel_equity_order",
+      "mcp__robinhood-trading__get_option_chains",
+      "mcp__robinhood-trading__get_option_instruments",
+      "mcp__robinhood-trading__get_option_quotes",
+      "mcp__robinhood-trading__review_option_order",
+      "mcp__robinhood-trading__place_option_order",
+      "mcp__robinhood-trading__cancel_option_order",
+      "mcp__robinhood-trading__get_option_orders",
+      "WebSearch",
+      "PushNotification"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p \"$HOME/Documents/Coding/trading/journal-history\" && cp \"$HOME/Desktop/Trading-Journal.md\" \"$HOME/Documents/Coding/trading/journal-history/$(date +%Y%m%d-%H%M%S).md\" 2>/dev/null; echo 'SOURCE OF TRUTH: ~/Desktop/Trading-Journal.md — read §0 STATE + §9d before ANY account action.'",
+            "timeout": 15,
+            "statusMessage": "Snapshotting trading journal"
+          }
+        ]
+      }
+    ]
+  }
+}
