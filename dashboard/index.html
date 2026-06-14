@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Agent Trading Desk</title>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root{--bg:#0c0e12;--panel:#14171d;--line:#222732;--txt:#e6e9ef;--dim:#8b93a3;--grn:#37d67a;--red:#ff5d5d;--acc:#5b9dff}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 -apple-system,Segoe UI,Roboto,monospace}
+  .wrap{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+  .left{border-right:1px solid var(--line);padding:16px;overflow:auto}
+  .main{padding:20px;overflow:auto}
+  h1{font-size:15px;letter-spacing:.5px;margin:0 0 14px} h2{font-size:12px;text-transform:uppercase;color:var(--dim);letter-spacing:1px;margin:22px 0 8px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .kpis{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+  .kpi .v{font-size:24px;font-weight:600} .kpi .l{font-size:11px;color:var(--dim);text-transform:uppercase}
+  .grn{color:var(--grn)} .red{color:var(--red)} .dim{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)} th{color:var(--dim);font-weight:500;font-size:11px;text-transform:uppercase}
+  .feed .item{padding:8px 0;border-bottom:1px solid var(--line)} .feed .t{color:var(--dim);font-size:11px} .feed .x{font-size:12.5px}
+  .chip{display:inline-block;background:#1d2330;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--acc)}
+  .tv{height:220px;border-radius:8px;overflow:hidden;margin-top:8px}
+  .banner{background:#1a1410;border:1px solid #3a2a1a;color:#e0b070;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="left">
+    <h1>🤖 AGENT DESK</h1>
+    <div class="banner">Read-only monitor. Trades are made by the agent through the deterministic risk gate. Not financial advice.</div>
+    <h2>Agent activity</h2>
+    <div class="feed" id="feed"></div>
+    <h2>Watchlist</h2>
+    <div id="watchlist"></div>
+  </aside>
+  <main class="main">
+    <div class="kpis panel" id="kpis"></div>
+    <div class="panel"><h2 style="margin-top:0">Equity vs QQQ (since inception)</h2><div id="chart" style="height:300px"></div></div>
+    <div class="panel"><h2 style="margin-top:0">Open positions</h2><div id="positions"></div></div>
+    <div class="panel"><h2 style="margin-top:0">Track record</h2><div id="stats"></div></div>
+    <div id="watch-charts"></div>
+    <p class="dim" id="gen"></p>
+  </main>
+</div>
+<script>
+const pct=x=>(x>=0?'+':'')+(x*100).toFixed(1)+'%';
+const usd=x=>'$'+Number(x).toLocaleString(undefined,{maximumFractionDigits:0});
+const cls=x=>x>=0?'grn':'red';
+
+async function load(){
+  let d;
+  try{ d=await (await fetch('./data.json')).json(); }
+  catch(e){ d=await (await fetch('./data.example.json')).json(); }
+  render(d);
+}
+function render(d){
+  const a=d.account||{}, s=d.stats||{};
+  document.getElementById('kpis').innerHTML=[
+    ['Account',usd(a.equity)],
+    ['Day',`<span class="${cls(a.day_pnl_pct||0)}">${pct(a.day_pnl_pct||0)}</span>`],
+    ['Alpha vs QQQ',`<span class="${cls(s.alpha_vs_qqq||0)}">${pct(s.alpha_vs_qqq||0)}</span>`],
+    ['Total P&L',`<span class="${cls(s.total_pnl||0)}">${usd(s.total_pnl||0)}</span>`],
+    ['Max DD',`<span class="red">${pct(s.max_drawdown||0)}</span>`],
+  ].map(([l,v])=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+  document.getElementById('feed').innerHTML=(d.decisions||[]).slice().reverse()
+    .map(x=>`<div class="item"><div class="t">${x.ts||''}</div><div class="x">${x.text||''}</div></div>`).join('')||'<div class="dim">no entries</div>';
+
+  document.getElementById('watchlist').innerHTML=(d.watchlist||[])
+    .map(w=>`<div class="item"><b>${w.symbol}</b> <span class="chip">${w.catalyst_date||''}</span><div class="t">${w.note||''}</div></div>`).join('');
+
+  document.getElementById('positions').innerHTML=tbl(
+    ['Symbol','Type','Qty','Cost','Last','P&L','Lane'],
+    (d.positions||[]).map(p=>[p.symbol,p.type,p.qty,p.cost,p.last,
+      `<span class="${cls(p.pnl_pct||0)}">${pct(p.pnl_pct||0)}</span>`,p.lane||''])
+  );
+
+  document.getElementById('stats').innerHTML=tbl(
+    ['Trades','Win%','Avg win','Avg loss','Profit factor','Expectancy'],
+    [[s.n,((s.win_rate||0)*100).toFixed(0)+'%',usd(s.avg_win||0),usd(s.avg_loss||0),
+      (s.profit_factor||0).toFixed(2),usd(s.expectancy||0)]]
+  );
+
+  // equity curve
+  const el=document.getElementById('chart');
+  const chart=LightweightCharts.createChart(el,{layout:{background:{color:'#14171d'},textColor:'#8b93a3'},
+    grid:{vertLines:{color:'#1c212b'},horzLines:{color:'#1c212b'}},height:300,timeScale:{timeVisible:false}});
+  const acct=chart.addLineSeries({color:'#5b9dff',lineWidth:2,title:'Account'});
+  const bench=chart.addLineSeries({color:'#8b93a3',lineWidth:1,title:'QQQ'});
+  acct.setData((d.equity_curve||[]).map(r=>({time:r.date,value:r.account})));
+  bench.setData((d.equity_curve||[]).map(r=>({time:r.date,value:r.benchmark})));
+  chart.timeScale().fitContent();
+
+  // live TradingView mini-charts for watchlist
+  document.getElementById('watch-charts').innerHTML=(d.watchlist||[]).map(w=>
+    `<div class="panel"><h2 style="margin-top:0">${w.symbol} — live</h2>
+     <div class="tv"><iframe style="width:100%;height:100%;border:0"
+       src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(w.symbol)}&interval=D&theme=dark&style=1&hidesidetoolbar=1&saveimage=0"></iframe></div></div>`).join('');
+
+  document.getElementById('gen').textContent='Generated: '+(d.generated_at||'');
+}
+function tbl(head,rows){
+  return `<table><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+  <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c==null?'':c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+load();
+</script>
+</body>
+</html>

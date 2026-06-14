@@ -18,3 +18,8 @@ validate_trades.py
 # live state + gate logs (real numbers)
 desk_state.json
 gate_decisions.log
+
+# dashboard live data (real positions)
+dashboard/data.json
+dashboard/data.generated.json
+dashboard/inputs/

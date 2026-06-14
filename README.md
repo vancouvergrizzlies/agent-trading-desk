@@ -8,7 +8,10 @@ An autonomous, options-focused trading desk run by [Claude Code](https://claude.
 | Path | Role |
 |---|---|
 | `tradingdesk/` | **deterministic, unit-tested quant core** (stdlib-only, 11 modules): Black-Scholes + greeks, vol & IV/HV gate, expected-move/payoff/asymmetry math, liquidity gate, sizing, the code-enforced **risk gate** (`gate_check()` + kill switch), **execution** (slippage guard/idempotency), **reconciliation** (protection-gap/drift), a **track-record engine**, and a **SEC Form-4 insider-cluster detector** |
-| `tests/` | 80 tests (known-value + a real EDGAR fixture). `python -m pytest -q` |
+| `tests/` | 82 tests (known-value, a real EDGAR fixture, an adversarial preflight suite). `python -m pytest -q` |
+| `hooks/pretrade_gate.py` | PreToolUse risk-gate hook — runs the deterministic gate on every order (allow/deny), enabling trades without per-trade approval that still can't breach limits. See `HOOKS.md`. |
+| `dashboard/` | self-contained read-only web dashboard — equity curve vs QQQ, positions, track-record stats, watchlist with live charts, agent decision feed. Generator builds `data.json` off `performance.py`. |
+| `DEPLOY.md` | plan for the always-on host that runs the loop unattended + serves the dashboard |
 | `.github/workflows/ci.yml` | CI: lint (ruff) + tests on Python 3.9/3.11/3.12 |
 | `.claude/commands/desk.md` | `/desk` — daily management (status / wrap / score / hunt), micro+macro sweep, playbook gates |
 | `.claude/commands/intel.md` | `/intel` — primary-source catalyst hunt (EDGAR, FDA, Federal Register, transcripts) |
