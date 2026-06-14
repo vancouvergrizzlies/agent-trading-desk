@@ -5,3 +5,9 @@ journal-history/
 .claude/settings.local.json
 Trading-Journal.md
 Trading-Journal-Archive.md
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/

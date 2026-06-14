@@ -5,13 +5,20 @@ An autonomous, options-focused trading desk run by [Claude Code](https://claude.
 > ⚠️ **Not financial advice. Real money, real losses.** This is a high-risk, asymmetric options strategy where most individual trades are expected to lose. Use only capital you can afford to lose entirely.
 
 ## What's here
-| File | Role |
+| Path | Role |
 |---|---|
-| `.claude/commands/desk.md` | `/desk` — daily management routine (status / wrap / score / hunt), comprehensive micro+macro sweep, the playbook gates |
+| `tradingdesk/` | **deterministic, unit-tested quant core** (stdlib-only): Black-Scholes + greeks, historical-vol & IV/HV gate, expected-move/payoff/asymmetry math, liquidity gate, position sizing, and a **SEC Form-4 insider-cluster detector** |
+| `tests/` | 31 tests (known-value + a real EDGAR fixture). `python -m pytest -q` |
+| `.github/workflows/ci.yml` | CI: lint (ruff) + tests on Python 3.9/3.11/3.12 |
+| `.claude/commands/desk.md` | `/desk` — daily management (status / wrap / score / hunt), micro+macro sweep, playbook gates |
 | `.claude/commands/intel.md` | `/intel` — primary-source catalyst hunt (EDGAR, FDA, Federal Register, transcripts) |
 | `.claude/commands/options-hunter.md` | `/options-hunter` — structures asymmetric 100–500%+ option trades; never fabricates data |
-| `journal-template.md` | starter "brain" — the doctrine, the lanes, every playbook rule, the scorecard structure. Copy → your own private journal. |
-| `settings.template.json` | permissions + a SessionStart snapshot hook (genericize paths/account) |
+| `journal-template.md` | starter "brain" — doctrine, lanes, every playbook rule, scorecard structure. Copy → your own private journal. |
+| `settings.template.json` | permissions + a SessionStart snapshot hook |
+| `ARCHITECTURE.md` | the LLM-agent + tested-tools design, in detail |
+
+## Design in one line
+**An LLM makes the judgment calls; a tested Python core computes every number it relies on.** The agent decides *what* to look at and *whether* to take a setup; `tradingdesk/` computes implied/historical vol, Black-Scholes value at a target, expected move, liquidity, and size — deterministically, with tests. If a number isn't from a tool, it doesn't get used. See `ARCHITECTURE.md`.
 
 ## Architecture (how it actually runs)
 1. **The journal is the brain.** A single markdown file holds: live state (§0), mandate (§1), strategy doctrine (§2), the playbook rules (§9d), the options checklist (§11), and the scorecard (§9b/c/f). Every session reads it first. **It is private — keep it out of git.**
@@ -33,4 +40,4 @@ The skills + template are the shared framework — edit them, PR them, improve t
 - Claude can't open its own sessions or watch the tape intraday — it's a scheduled/batch operator, not a day-trader.
 - The Robinhood MCP places **single-leg** options only (long calls/puts/LEAPS); spreads are manual in-app.
 - Time-stops (sell on date X) need a live session — no broker order type covers them.
-- This framework has a *short* live track record. It is an experiment with a built-in kill switch, not a proven money machine.
+- The quant core is tested and the EDGAR pipeline pulls real SEC data, but **the *strategy* is unproven** — a short live track record, currently around break-even. This is an experiment with a built-in kill switch (the doctrine gate), not a proven money machine. The engineering is solid; whether the edge is real is exactly what the scorecard is built to find out.
