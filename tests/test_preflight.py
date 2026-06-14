@@ -2,7 +2,6 @@
 halts. A passing test here = a stale quote / NaN / drift / double-fire / drawdown
 provably cannot produce an order. That is the real proof of quality.
 """
-import math
 import unittest
 
 from tradingdesk import preflight as pf
@@ -40,56 +39,68 @@ class TestPreflightAttacks(unittest.TestCase):
         self.assertIn(check_name, [c.name for c in r.failures()])
 
     def test_stale_quote_halts(self):
-        c = clean_ctx(); c["quote_age_s"] = 600
+        c = clean_ctx()
+        c["quote_age_s"] = 600
         self.assertHalts(c, "quote_fresh")
 
     def test_nan_greek_halts(self):
-        c = clean_ctx(); c["delta"] = float("nan")
+        c = clean_ctx()
+        c["delta"] = float("nan")
         self.assertHalts(c, "quote_sane")
 
     def test_crossed_market_halts(self):
-        c = clean_ctx(); c["bid"], c["ask"] = 2.70, 2.60
+        c = clean_ctx()
+        c["bid"], c["ask"] = 2.70, 2.60
         self.assertHalts(c, "quote_sane")
 
     def test_insane_iv_halts(self):
-        c = clean_ctx(); c["iv"] = 12.0
+        c = clean_ctx()
+        c["iv"] = 12.0
         self.assertHalts(c, "quote_sane")
 
     def test_ledger_drift_halts(self):
-        c = clean_ctx(); c["broker_positions"] = {"RCAT": 2}  # MCP says 2, we think 5
+        c = clean_ctx()
+        c["broker_positions"] = {"RCAT": 2}   # MCP says 2, we think 5
         self.assertHalts(c, "reconciled")
 
     def test_drawdown_kill_switch_halts(self):
-        c = clean_ctx(); c["risk"]["drawdown_from_hwm_pct"] = -0.09
+        c = clean_ctx()
+        c["risk"]["drawdown_from_hwm_pct"] = -0.09
         self.assertHalts(c, "risk_state")
 
     def test_day_loss_kill_switch_halts(self):
-        c = clean_ctx(); c["risk"]["day_pnl_pct"] = -0.05
+        c = clean_ctx()
+        c["risk"]["day_pnl_pct"] = -0.05
         self.assertHalts(c, "risk_state")
 
     def test_over_deployed_halts(self):
-        c = clean_ctx(); c["risk"]["deployed_pct"] = 0.55
+        c = clean_ctx()
+        c["risk"]["deployed_pct"] = 0.55
         self.assertHalts(c, "risk_state")
 
     def test_duplicate_signal_halts(self):
         c = clean_ctx()
-        c["fired_registry"].mark("abc123")   # this signal already fired an order
+        c["fired_registry"].mark("abc123")    # this signal already fired an order
         self.assertHalts(c, "not_duplicate")
 
     def test_market_closed_halts(self):
-        c = clean_ctx(); c["market_open"] = False
+        c = clean_ctx()
+        c["market_open"] = False
         self.assertHalts(c, "market_open")
 
     def test_earnings_blackout_halts(self):
-        c = clean_ctx(); c["days_to_earnings"] = 1
+        c = clean_ctx()
+        c["days_to_earnings"] = 1
         self.assertHalts(c, "earnings_blackout")
 
     def test_order_far_from_mid_halts(self):
-        c = clean_ctx(); c["order"] = {"limit": 5.00, "mid": 2.56, "size": 5}
+        c = clean_ctx()
+        c["order"] = {"limit": 5.00, "mid": 2.56, "size": 5}
         self.assertHalts(c, "order_sane")
 
     def test_zero_size_halts(self):
-        c = clean_ctx(); c["order"] = {"limit": 2.58, "mid": 2.56, "size": 0}
+        c = clean_ctx()
+        c["order"] = {"limit": 2.58, "mid": 2.56, "size": 0}
         self.assertHalts(c, "order_sane")
 
 
@@ -101,7 +112,8 @@ class TestFiredKeyRegistry(unittest.TestCase):
         self.assertTrue(reg.has_fired("k1"))
 
     def test_persists_to_file(self):
-        import tempfile, os
+        import os
+        import tempfile
         path = os.path.join(tempfile.mkdtemp(), "fired.txt")
         FiredKeyRegistry(path).mark("kX")
         self.assertTrue(FiredKeyRegistry(path).has_fired("kX"))  # survives reload
