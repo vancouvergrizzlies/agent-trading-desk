@@ -52,7 +52,7 @@
 const pct=x=>(x>=0?'+':'')+(x*100).toFixed(1)+'%';
 const usd=x=>'$'+Number(x).toLocaleString(undefined,{maximumFractionDigits:0});
 const cls=x=>x>=0?'grn':'red';
-const POLL_MS=8000;
+const POLL_MS=1800000;   // 30 min — the desk updates on its cycle, not by the second
 let chart,acctS,benchS,built=false,lastFetch=0,topDecision='';
 
 async function tick(){
@@ -130,7 +130,7 @@ setInterval(()=>{
   const el=document.getElementById('live');
   if(!lastFetch){return;}
   const s=Math.round((Date.now()-lastFetch)/1000);
-  el.textContent='LIVE · updated '+(s<2?'now':s+'s ago');
+  el.textContent='updated '+(s<60?(s<2?'just now':s+'s ago'):Math.round(s/60)+'m ago');
 },1000);
 
 tick();
