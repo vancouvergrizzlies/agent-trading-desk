@@ -35,7 +35,7 @@
   </aside>
   <main class="main">
     <div class="kpis panel" id="kpis"></div>
-    <div class="panel"><h2 style="margin-top:0">Equity vs QQQ (since inception)</h2><div id="chart" style="height:300px"></div></div>
+    <div class="panel"><h2 style="margin-top:0">Agent vs QQQ — % return since inception</h2><div id="chart" style="height:300px"></div></div>
     <div class="panel"><h2 style="margin-top:0">Open positions</h2><div id="positions"></div></div>
     <div class="panel"><h2 style="margin-top:0">Track record</h2><div id="stats"></div></div>
     <div id="watch-charts"></div>
@@ -85,10 +85,14 @@ function render(d){
   const el=document.getElementById('chart');
   const chart=LightweightCharts.createChart(el,{layout:{background:{color:'#14171d'},textColor:'#8b93a3'},
     grid:{vertLines:{color:'#1c212b'},horzLines:{color:'#1c212b'}},height:300,timeScale:{timeVisible:false}});
-  const acct=chart.addLineSeries({color:'#5b9dff',lineWidth:2,title:'Account'});
-  const bench=chart.addLineSeries({color:'#8b93a3',lineWidth:1,title:'QQQ'});
-  acct.setData((d.equity_curve||[]).map(r=>({time:r.date,value:r.account})));
-  bench.setData((d.equity_curve||[]).map(r=>({time:r.date,value:r.benchmark})));
+  const pf2={type:'custom',minMove:0.01,formatter:p=>(p>=0?'+':'')+p.toFixed(1)+'%'};
+  const acct=chart.addLineSeries({color:'#5b9dff',lineWidth:2,title:'Agent',priceFormat:pf2});
+  const bench=chart.addLineSeries({color:'#8b93a3',lineWidth:1,title:'QQQ',priceFormat:pf2});
+  const ec=d.equity_curve||[];
+  const a0=ec.length?ec[0].account:1, b0=ec.length?ec[0].benchmark:1;
+  // normalize both to % return from inception so it's a true performance race
+  acct.setData(ec.map(r=>({time:r.date,value:(r.account/a0-1)*100})));
+  bench.setData(ec.map(r=>({time:r.date,value:(r.benchmark/b0-1)*100})));
   chart.timeScale().fitContent();
 
   // live TradingView mini-charts for watchlist
